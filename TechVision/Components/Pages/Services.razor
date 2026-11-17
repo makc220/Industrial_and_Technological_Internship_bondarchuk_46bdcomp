@@ -1,0 +1,63 @@
+@page "/services"
+@using Microsoft.EntityFrameworkCore
+@using TechVision.Data
+@using TechVision.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Послуги — TechVision</PageTitle>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Наші послуги</h1>
+        <p class="lead text-muted">
+            Сучасні технологічні рішення для розвитку вашого бізнесу.
+        </p>
+    </div>
+
+    @if (services == null)
+    {
+        <p class="text-center">Завантаження послуг...</p>
+    }
+    else if (services.Count == 0)
+    {
+        <p class="text-center">Наразі послуг немає.</p>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var service in services)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body p-4">
+                            @if (!string.IsNullOrWhiteSpace(service.Icon))
+                            {
+                                <div class="mb-3 fs-2 text-primary">
+                                    <i class="bi @service.Icon"></i>
+                                </div>
+                            }
+
+                            <h3 class="h4">@service.Title</h3>
+                            <p class="text-muted mb-0">
+                                @service.Description
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Service>? services;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        services = await db.Services
+            .OrderBy(s => s.Title)
+            .ToListAsync();
+    }
+}

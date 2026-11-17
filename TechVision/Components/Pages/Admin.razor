@@ -1,0 +1,557 @@
+@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using TechVision.Data
+@using TechVision.Models
+
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@attribute [Authorize]
+
+<PageTitle>Панель адміністратора — TechVision</PageTitle>
+
+<div class="admin-dashboard">
+
+    <div class="admin-header">
+        <div>
+            <span class="admin-label">TECHVISION ADMINISTRATION</span>
+            <h1>Панель адміністратора</h1>
+            <p>
+                Вітаємо в адміністративній панелі TechVision!
+                Тут ви можете керувати вмістом вебсайту.
+            </p>
+        </div>
+
+        <label class="admin-header-icon"
+            for="avatarUpload"
+            title="Натисніть, щоб змінити зображення">
+
+            @if (!string.IsNullOrEmpty(avatarDataUrl))
+            {
+                <img src="@avatarDataUrl" alt="Аватар адміністратора" />
+            }
+            else
+            {
+                <i class="bi bi-person-gear"></i>
+            }
+
+            <span class="avatar-edit-hint">
+                <i class="bi bi-camera-fill"></i>
+            </span>
+        </label>
+
+        <InputFile id="avatarUpload"
+                OnChange="UploadAvatar"
+                accept="image/png,image/jpeg,image/webp"
+                class="visually-hidden" />
+            </div>
+
+    <div class="admin-section-heading">
+        <h2>Керування сайтом</h2>
+        <p>Оберіть розділ, з яким бажаєте працювати.</p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="admin-card h-100">
+                <div class="admin-card-icon services-icon">
+                    <i class="bi bi-grid-1x2"></i>
+                </div>
+
+                <h3>Послуги</h3>
+
+                <p>
+                    Додавайте, редагуйте та видаляйте
+                    послуги, які пропонує компанія.
+                </p>
+
+                <a href="/admin/services" class="admin-card-link">
+                    Керувати послугами
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="admin-card h-100">
+                <div class="admin-card-icon news-icon">
+                    <i class="bi bi-newspaper"></i>
+                </div>
+
+                <h3>Новини</h3>
+
+                <p>
+                    Публікуйте новини компанії,
+                    змінюйте їхній вміст або видаляйте за потреби.
+                </p>
+
+                <a href="/admin/news" class="admin-card-link">
+                    Керувати новинами
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="admin-card h-100">
+                <div class="admin-card-icon messages-icon">
+                    <i class="bi bi-envelope"></i>
+                </div>
+
+                <h3>Повідомлення</h3>
+
+                <p>
+                    Переглядайте звернення відвідувачів,
+                    отримані через контактну форму сайту.
+                </p>
+
+                <a href="/admin/messages" class="admin-card-link">
+                    Переглянути повідомлення
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+        @if (!string.IsNullOrWhiteSpace(avatarMessage))
+        {
+            <div class="alert @avatarMessageClass mt-3" role="status">
+                @avatarMessage
+            </div>
+        }
+
+    <div class="admin-footer">
+        <div>
+            <i class="bi bi-shield-check"></i>
+            <span>Ви авторизовані як адміністратор</span>
+        </div>
+
+        <form method="post" action="/admin/logout">
+            <AntiforgeryToken />
+            <button type="submit" class="admin-logout">
+                <i class="bi bi-box-arrow-right"></i>
+                Вийти з облікового запису
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<style>
+    .admin-dashboard {
+        padding: 12px 0 30px;
+    }
+
+    .admin-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 40px;
+        margin-bottom: 42px;
+        border-radius: 18px;
+        background: #102747;
+        color: white;
+    }
+
+    .admin-label {
+        display: inline-block;
+        margin-bottom: 12px;
+        color: #9bbce5;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .admin-header h1 {
+        margin-bottom: 12px;
+        font-size: clamp(1.7rem, 4vw, 2.4rem);
+        font-weight: 700;
+    }
+
+    .admin-header p {
+        max-width: 600px;
+        margin-bottom: 0;
+        color: #d0dced;
+        line-height: 1.7;
+    }
+
+    .admin-header-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 100px;
+        height: 100px;
+        border-radius: 22px;
+        background: rgba(255,255,255,0.1);
+        font-size: 3.5rem;
+        color: #c5dcfa;
+    }
+
+    .admin-section-heading {
+        margin-bottom: 24px;
+    }
+
+    .admin-section-heading h2 {
+        margin-bottom: 6px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #102747;
+    }
+
+    .admin-section-heading p {
+        margin-bottom: 0;
+        color: #64748b;
+    }
+
+    .admin-card {
+        display: flex;
+        flex-direction: column;
+        padding: 28px;
+        border: 1px solid #e5eaf1;
+        border-radius: 16px;
+        background: white;
+        box-shadow: 0 4px 16px rgba(16,39,71,0.04);
+        transition: transform 0.2s ease,
+                    box-shadow 0.2s ease;
+    }
+
+    .admin-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(16,39,71,0.1);
+    }
+
+    .admin-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        margin-bottom: 22px;
+        border-radius: 14px;
+        font-size: 1.7rem;
+    }
+
+    .services-icon {
+        background: #e8f1ff;
+        color: #2563eb;
+    }
+
+    .news-icon {
+        background: #e8f7ef;
+        color: #16834b;
+    }
+
+    .messages-icon {
+        background: #fff3df;
+        color: #d97706;
+    }
+
+    .admin-card h3 {
+        margin-bottom: 12px;
+        color: #102747;
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .admin-card p {
+        flex-grow: 1;
+        margin-bottom: 24px;
+        color: #64748b;
+        line-height: 1.7;
+    }
+
+    .admin-card-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-top: 16px;
+        border-top: 1px solid #edf0f5;
+        color: #2563eb;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .admin-card-link:hover {
+        color: #102747;
+    }
+
+    .admin-card-link i {
+        transition: transform 0.2s ease;
+    }
+
+    .admin-card-link:hover i {
+        transform: translateX(4px);
+    }
+
+    .admin-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 38px;
+        padding-top: 24px;
+        border-top: 1px solid #e5eaf1;
+    }
+
+    .admin-footer > div {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .admin-footer > div i {
+        color: #16834b;
+        font-size: 1.2rem;
+    }
+
+    .admin-logout {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: 1px solid #e5eaf1;
+        border-radius: 9px;
+        background: white;
+        color: #dc3545;
+        font-weight: 600;
+        transition: background 0.2s ease;
+    }
+
+    .admin-logout:hover {
+        background: #fff1f2;
+    }
+
+    .admin-header-icon {
+        position: relative;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .admin-header-icon img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .admin-header-icon:hover {
+        filter: brightness(0.85);
+    }
+
+    .admin-header-icon:focus-visible {
+        outline: 3px solid #93c5fd;
+        outline-offset: 4px;
+    }
+
+    .avatar-edit-hint {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 7px;
+        background: rgba(0, 0, 0, 0.55);
+        color: white;
+        font-size: 1rem;
+        text-align: center;
+    }   
+    
+    @@media (max-width: 576px) {
+        .admin-header {
+            padding: 26px 16px;
+            gap: 12px;
+        }
+
+        .admin-header-icon {
+            display: flex;
+            width: 68px;
+            height: 68px;
+            min-width: 68px;
+            font-size: 2.3rem;
+            align-self: flex-start;
+        }
+
+        .admin-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .admin-logout {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+</style>
+
+
+@code {
+    private const long MaxAvatarSize = 2 * 1024 * 1024;
+
+    private string? avatarDataUrl;
+    private string? avatarMessage;
+    private string avatarMessageClass = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAvatar();
+    }
+
+    private async Task LoadAvatar()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(username))
+            return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var admin = await db.AdminUsers
+            .FirstOrDefaultAsync(a => a.Username == username);
+
+        if (admin?.AvatarImage != null &&
+            !string.IsNullOrWhiteSpace(admin.AvatarContentType))
+        {
+            avatarDataUrl =
+                $"data:{admin.AvatarContentType};base64,{Convert.ToBase64String(admin.AvatarImage)}";
+        }
+    }
+
+    private async Task UploadAvatar(InputFileChangeEventArgs e)
+    {
+        avatarMessage = null;
+
+        var file = e.File;
+
+        var allowedTypes = new[]
+        {
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+        };
+
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            ShowAvatarMessage(
+                "Дозволені лише зображення PNG, JPG, JPEG та WEBP.",
+                "alert-danger");
+            return;
+        }
+
+        if (file.Size == 0 || file.Size > MaxAvatarSize)
+        {
+            ShowAvatarMessage(
+                "Розмір зображення не повинен перевищувати 2 МБ.",
+                "alert-danger");
+            return;
+        }
+
+        byte[] imageBytes;
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxAvatarSize);
+            using var memoryStream = new MemoryStream();
+
+            await stream.CopyToAsync(memoryStream);
+            imageBytes = memoryStream.ToArray();
+        }
+        catch (IOException)
+        {
+            ShowAvatarMessage(
+                "Не вдалося прочитати файл. Спробуйте інше зображення.",
+                "alert-danger");
+            return;
+        }
+
+        if (!IsValidImage(imageBytes, file.ContentType))
+        {
+            ShowAvatarMessage(
+                "Файл не є коректним зображенням зазначеного формату.",
+                "alert-danger");
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var username = authState.User.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(username))
+            return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var admin = await db.AdminUsers
+            .FirstOrDefaultAsync(a => a.Username == username);
+
+        if (admin == null)
+        {
+            ShowAvatarMessage(
+                "Обліковий запис адміністратора не знайдено.",
+                "alert-danger");
+            return;
+        }
+
+        admin.AvatarImage = imageBytes;
+        admin.AvatarContentType = file.ContentType;
+
+        await db.SaveChangesAsync();
+
+        avatarDataUrl =
+            $"data:{file.ContentType};base64,{Convert.ToBase64String(imageBytes)}";
+
+        ShowAvatarMessage(
+            "Зображення адміністратора успішно збережено.",
+            "alert-success");
+    }
+
+    private static bool IsValidImage(byte[] bytes, string contentType)
+    {
+        if (contentType == "image/png")
+        {
+            byte[] signature =
+            {
+                0x89, 0x50, 0x4E, 0x47,
+                0x0D, 0x0A, 0x1A, 0x0A
+            };
+
+            return bytes.Length >= signature.Length &&
+                   bytes.AsSpan(0, signature.Length)
+                       .SequenceEqual(signature);
+        }
+
+        if (contentType == "image/jpeg")
+        {
+            return bytes.Length >= 3 &&
+                   bytes[0] == 0xFF &&
+                   bytes[1] == 0xD8 &&
+                   bytes[2] == 0xFF;
+        }
+
+        if (contentType == "image/webp")
+        {
+            return bytes.Length >= 12 &&
+                   System.Text.Encoding.ASCII.GetString(bytes, 0, 4) == "RIFF" &&
+                   System.Text.Encoding.ASCII.GetString(bytes, 8, 4) == "WEBP";
+        }
+
+        return false;
+    }
+
+    private void ShowAvatarMessage(string text, string cssClass)
+    {
+        avatarMessage = text;
+        avatarMessageClass = cssClass;
+    }
+}

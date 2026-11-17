@@ -1,0 +1,225 @@
+@page "/admin/news"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using TechVision.Models
+@using TechVision.Data
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Керування новинами — TechVision</PageTitle>
+
+<h1>Керування новинами</h1>
+<p>Додавання, редагування та видалення новин компанії.</p>
+
+<div class="card p-3 mb-4">
+    <h3>@(editingNews == null ? "Додати новину" : "Редагувати новину")</h3>
+
+    <EditForm Model="formModel"
+          OnValidSubmit="SaveNews"
+          FormName="NewsForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Заголовок</label>
+            <InputText class="form-control" @bind-Value="formModel.Title" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Текст новини</label>
+            <InputTextArea class="form-control"
+                           rows="6"
+                           @bind-Value="formModel.Content" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Іконка</label>
+
+            <InputText class="form-control"
+                    @bind-Value="formModel.Icon" />
+
+            <small class="text-muted">
+                Введіть назву Bootstrap Icon без префікса bi.
+                Наприклад: bi-cpu, bi-shield-check, bi-megaphone.
+            </small>
+
+            @if (!string.IsNullOrWhiteSpace(formModel.Icon))
+            {
+                <div class="mt-3 d-flex align-items-center gap-2">
+                    <span class="text-muted">Попередній перегляд:</span>
+                    <i class="@($"bi {formModel.Icon}") fs-2 text-primary"></i>
+                </div>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary">
+            @(editingNews == null ? "Додати" : "Зберегти зміни")
+        </button>
+
+        @if (editingNews != null)
+        {
+            <button type="button"
+                    class="btn btn-secondary ms-2"
+                    @onclick="CancelEdit">
+                Скасувати
+            </button>
+        }
+    </EditForm>
+</div>
+
+<h3>Список новин</h3>
+
+@if (news == null)
+{
+    <p>Завантаження...</p>
+}
+else if (news.Count == 0)
+{
+    <p>Новин поки немає.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Заголовок</th>
+                    <th>Іконка</th>
+                    <th>Дата публікації</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in news)
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.Icon))
+                            {
+                                <i class="@($"bi {item.Icon}") fs-4 text-primary me-2"></i>
+                                <span>@item.Icon</span>
+                            }
+                        </td>
+                        <td>@item.PublishedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1"
+                                    @onclick="() => EditNews(item)">
+                                Редагувати
+                            </button>
+
+                            <button class="btn btn-sm btn-danger"
+                                    @onclick="() => DeleteNews(item.Id)">
+                                Видалити
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-info mt-3">@message</div>
+}
+
+@code {
+    private List<News>? news;
+    private News formModel = new();
+    private News? editingNews;
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNews();
+    }
+
+    private async Task LoadNews()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        news = await db.News
+            .OrderByDescending(n => n.PublishedAt)
+            .ToListAsync();
+    }
+
+    private async Task SaveNews()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        if (editingNews == null)
+        {
+        db.News.Add(new News
+        {
+            Title = formModel.Title,
+            Content = formModel.Content,
+            Icon = formModel.Icon,
+            PublishedAt = DateTime.Now
+        });
+
+            message = "Новину успішно додано.";
+        }
+        else
+        {
+            var item = await db.News.FindAsync(editingNews.Id);
+
+            if (item == null)
+                return;
+
+            item.Title = formModel.Title;
+            item.Content = formModel.Content;
+            item.Icon = formModel.Icon;
+
+            message = "Новину успішно оновлено.";
+        }
+
+        await db.SaveChangesAsync();
+
+        formModel = new News();
+        editingNews = null;
+
+        await LoadNews();
+    }
+
+    private void EditNews(News item)
+    {
+        editingNews = item;
+
+        formModel = new News
+        {
+            Title = item.Title,
+            Content = item.Content,
+            Icon = item.Icon
+        };
+
+        message = null;
+    }
+
+    private async Task DeleteNews(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var item = await db.News.FindAsync(id);
+
+        if (item == null)
+            return;
+
+        db.News.Remove(item);
+        await db.SaveChangesAsync();
+
+        if (editingNews?.Id == id)
+            CancelEdit();
+
+        message = "Новину видалено.";
+
+        await LoadNews();
+    }
+
+    private void CancelEdit()
+    {
+        editingNews = null;
+        formModel = new News();
+        message = null;
+    }
+}

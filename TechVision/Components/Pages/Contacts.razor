@@ -1,0 +1,185 @@
+@page "/contacts"
+@using Microsoft.EntityFrameworkCore
+@using TechVision.Data
+@using TechVision.Models
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<PageTitle>Контакти — TechVision</PageTitle>
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Зв'яжіться з нами</h1>
+        <p class="lead text-muted">
+            Маєте запитання або пропозиції? Напишіть нам!
+        </p>
+    </div>
+
+    <div class="row g-4 align-items-start">
+
+        <!-- Контактна інформація -->
+        <div class="col-lg-5 align-items-start">
+            <div class="p-4 rounded-4 h-100"
+                 style="background: #102747; color: white;">
+
+                <h2 class="h3 mb-4">Контактна інформація</h2>
+
+                <div class="d-flex mb-4">
+                    <i class="bi bi-envelope fs-3 me-3"></i>
+                    <div>
+                        <h3 class="h6">Електронна пошта</h3>
+                        <p class="mb-0 text-light">
+                            info@techvision.example
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                    <i class="bi bi-telephone fs-3 me-3"></i>
+                    <div>
+                        <h3 class="h6">Телефон</h3>
+                        <p class="mb-0 text-light">
+                            +380 (00) 000-00-00
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex mb-4">
+                    <i class="bi bi-geo-alt fs-3 me-3"></i>
+                    <div>
+                        <h3 class="h6">Адреса</h3>
+                        <p class="mb-0 text-light">
+                            Україна
+                        </p>
+                    </div>
+                </div>
+
+                <hr class="border-light opacity-50" />
+
+                <p class="text-light mb-0">
+                    Ми відкриті до нових ідей, співпраці
+                    та технологічних проєктів.
+                </p>
+
+            </div>
+        </div>
+
+        <!-- Форма повідомлення -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4 p-md-5">
+
+                    <h2 class="h3 fw-bold mb-4">
+                        Надіслати повідомлення
+                    </h2>
+
+                    <EditForm Model="formModel"
+                              OnValidSubmit="SendMessage"
+                              FormName="ContactForm">
+
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Ваше ім'я
+                            </label>
+                            <InputText class="form-control"
+                                       @bind-Value="formModel.Name"
+                                       placeholder="Введіть ваше ім'я" />
+                            <ValidationMessage For="@(() => formModel.Name)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Електронна пошта
+                            </label>
+                            <InputText class="form-control"
+                                       type="email"
+                                       @bind-Value="formModel.Email"
+                                       placeholder="example@email.com" />
+                            <ValidationMessage For="@(() => formModel.Email)" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                Повідомлення
+                            </label>
+                            <InputTextArea class="form-control"
+                                           rows="5"
+                                           @bind-Value="formModel.Message"
+                                           placeholder="Напишіть ваше повідомлення..." />
+                            <ValidationMessage For="@(() => formModel.Message)" />
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary btn-lg w-100"
+                                disabled="@isSubmitting">
+                            @(isSubmitting ? "Надсилання..." : "Надіслати повідомлення")
+                        </button>
+
+                    </EditForm>
+
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success mt-3 mb-0">
+                            @successMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0">
+                            @errorMessage
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private ContactMessage formModel = new();
+    private bool isSubmitting;
+    private string? successMessage;
+    private string? errorMessage;
+
+    private async Task SendMessage()
+    {
+        if (isSubmitting)
+            return;
+
+        isSubmitting = true;
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            db.ContactMessages.Add(new ContactMessage
+            {
+                Name = formModel.Name,
+                Email = formModel.Email,
+                Message = formModel.Message,
+                CreatedAt = DateTime.Now
+            });
+
+            await db.SaveChangesAsync();
+
+            formModel = new ContactMessage();
+            successMessage = "Ваше повідомлення успішно надіслано!";
+        }
+        catch
+        {
+            errorMessage = "Не вдалося надіслати повідомлення. Спробуйте ще раз.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

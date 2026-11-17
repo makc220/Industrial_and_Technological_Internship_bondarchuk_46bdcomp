@@ -1,0 +1,106 @@
+@page "/admin/login"
+@model TechVision.Pages.AdminLoginModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вхід адміністратора — TechVision</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 35px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+        }
+
+        h1 { margin-top: 0; color: #172554; }
+        p { color: #64748b; }
+
+        label {
+            display: block;
+            margin: 18px 0 7px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 24px;
+            padding: 13px;
+            border: 0;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #1d4ed8; }
+
+        .error {
+            margin-top: 15px;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <main class="login-card">
+        <h1>TechVision</h1>
+        <p>Вхід до панелі адміністратора</p>
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+            <label for="username">Логін</label>
+            <input id="username"
+                   name="Username"
+                   value="@Model.Username"
+                   autocomplete="username"
+                   required />
+
+            <label for="password">Пароль</label>
+            <input id="password"
+                   name="Password"
+                   type="password"
+                   autocomplete="current-password"
+                   required />
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="error">@Model.ErrorMessage</div>
+            }
+
+            <button type="submit">Увійти</button>
+        </form>
+    </main>
+</body>
+</html>

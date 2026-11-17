@@ -1,0 +1,20 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData"
+                            DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                <h1>Доступ заборонено</h1>
+                <p>Для перегляду цієї сторінки необхідно увійти як адміністратор.</p>
+                <a href="/admin/login">Перейти до авторизації</a>
+            </NotAuthorized>
+
+            <Authorizing>
+                <p>Перевірка доступу...</p>
+            </Authorizing>
+        </AuthorizeRouteView>
+
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
